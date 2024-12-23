@@ -1,10 +1,12 @@
 from typing import List
+
 from fastapi import APIRouter, Depends, Query, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.core.database import get_db
 from src.schemas.recomendation import ExplorationRecommendation
-from src.services.recomendation import RecommendationService
-from src.api.dependencies import get_recommendation_service
+from src.repositories.recomendation import RecommendationRepository
+
 
 router = APIRouter()
 
@@ -15,27 +17,19 @@ async def get_exploration_recommendations(
 
 ):
     
-    recommendation_service = RecommendationService()
+    recommendation_repo = RecommendationRepository()
 
     try:
-        recommendations = await recommendation_service.get_exploration_recommendations(
+        # Obtener los datos originales
+        raw_recommendations = await recommendation_repo.get_exploration_recommendations(
             db=db,
             limit=limit
         )
+
+        # Transformar los datos en el formato esperado
+
         
-        return [
-            ExplorationRecommendation(
-                location_id=location.id,
-                category_id=category.id,
-                location_name=location.name,
-                category_name=category.name,
-                last_reviewed_at=last_reviewed,
-                distance_km=None
-            )
-            for location, category, last_reviewed in recommendations
-        ]
+        return raw_recommendations
     except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error getting recommendations: {str(e)}"
-        )
+        print(e)
+        raise HTTPException(status_code=500, detail=str(e))

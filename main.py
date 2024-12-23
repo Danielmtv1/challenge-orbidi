@@ -1,19 +1,16 @@
-import uvicorn
 import logging
+from contextlib import asynccontextmanager
+
+import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from contextlib import asynccontextmanager
+
 from src.core.config import get_settings
-from src.api.v1.router import api_router
 from src.core.database import engine, Base, init_db_pool
+from src.api.v1.router import api_router
+
 
 settings = get_settings()
-
-print("Loading config settings from the environment...")
-print("Database URL:", settings.DATABASE_URL)
-print("Redis URL:", settings.REDIS_URL)
-print("API Key Header:", settings.API_KEY_HEADER)
-print("Review Expiration Days:", settings.REVIEW_EXPIRATION_DAYS)
 
 # logging.basicConfig(level=logging.INFO)
 logging.basicConfig(

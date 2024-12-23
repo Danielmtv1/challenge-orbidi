@@ -1,6 +1,8 @@
 from sqlalchemy import Column, ForeignKey, DateTime, Index, Integer
 from sqlalchemy.orm import relationship
+
 from .base import BaseModel
+
 
 class LocationCategoryReview(BaseModel):
     __tablename__ = "location_category_reviews"
@@ -15,7 +17,7 @@ class LocationCategoryReview(BaseModel):
         ForeignKey("categories.id", ondelete="CASCADE"),
         nullable=False
     )
-    last_reviewed_at = Column(DateTime(timezone=True), nullable=False)
+    last_reviewed_at = Column(DateTime(timezone=True), nullable=True )
     
     location = relationship("Location", back_populates="reviews")
     category = relationship("Category", back_populates="reviews")

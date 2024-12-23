@@ -1,10 +1,13 @@
-from typing import List, Optional
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import func
-from sqlalchemy.future import select
-from sqlalchemy.exc import SQLAlchemyError
+from typing import Optional, List
+
 from geoalchemy2.elements import WKTElement
+from sqlalchemy import func
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.future import select
+
 from src.models.location import Location
+from src.repositories.recomendation import LocationCategoryRepository
 from .base import BaseRepository
 
 
@@ -19,6 +22,7 @@ class LocationRepository(BaseRepository[Location]):
         name: str,
         latitude: float,
         longitude: float,
+        category: int,
         description: Optional[str] = None
     ) -> Location:
         try:
@@ -42,8 +46,14 @@ class LocationRepository(BaseRepository[Location]):
             
             # Refresh the object to get the updated values
             await session.refresh(location)
-            
-            return location
+            location_category = LocationCategoryRepository()
+       
+            location_category_review = await location_category.create_relationship(session, location_id=location.id, category_id=category)
+            if location_category_review:
+                return location
+            else:
+                raise Exception("Error creando la relación entre la ubicación y la categoría")
+
 
         except SQLAlchemyError as e:
             await session.rollback()

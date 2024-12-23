@@ -1,13 +1,12 @@
 from typing import List, Optional
+
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from src.core.database import get_db
-from src.schemas.location import (
-    LocationResponse,
-    LocationWithDistance
-)
-from src.repositories.location import LocationRepository
 from src.api.dependencies import verify_api_key
+from src.schemas.location import LocationResponse, LocationWithDistance
+from src.repositories.location import LocationRepository
 
 router = APIRouter()
 
@@ -20,7 +19,8 @@ router = APIRouter()
 async def create_location(
     name: str, 
     latitude: float, 
-    longitude: float, 
+    longitude: float,
+    category: int,
     description: Optional[str] = None,
     db: AsyncSession = Depends(get_db)
 ):
@@ -31,6 +31,7 @@ async def create_location(
         name=name,
         latitude=latitude,
         longitude=longitude,
+        category=category,
         description=description
     )
     return location

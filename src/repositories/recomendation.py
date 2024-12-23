@@ -1,129 +1,95 @@
 from datetime import datetime, timedelta
-from typing import List, Tuple, Optional
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, or_, func
-from src.models import Location, Category, LocationCategoryReview
-from src.core.config import get_settings
-from src.schemas.recomendation import ExplorationRecommendation
+from typing import List
+
 import logging
+
 from fastapi import HTTPException, status
+from sqlalchemy import select, func, or_
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.core.config import get_settings
+from src.models.category import Category
+from src.models.location import Location
+from src.models.review import LocationCategoryReview
+from src.schemas.recomendation import ExplorationRecommendation
+
+from .base import BaseRepository
+
+
+
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
 
-class RecommendationService:
-    """
-    Service for handling location and category recommendations
-    """
-    
+class RecommendationRepository(BaseRepository[LocationCategoryReview]):
+
+    def __init__(self):
+
+        super().__init__(model=Location)
+
+
     async def get_exploration_recommendations(
         self,
         db: AsyncSession,
-        user_latitude: Optional[float] = None,
-        user_longitude: Optional[float] = None,
         limit: int = 10
     ) -> List[ExplorationRecommendation]:
-        """
-        Get exploration recommendations based on review status and optionally location
-        
-        Args:
-            db: Database session
-            user_latitude: Optional user's latitude for nearby recommendations
-            user_longitude: Optional user's longitude for nearby recommendations
-            limit: Maximum number of recommendations to return
-            
-        Returns:
-            List of recommendations ordered by priority and distance if location provided
-        """
         try:
-            # Subquerys for last review date
-            last_reviews = (
-                select(
-                    LocationCategoryReview.location_id,
-                    LocationCategoryReview.category_id,
-                    func.max(LocationCategoryReview.last_reviewed_at).label('last_reviewed')
-                )
-                .group_by(
-                    LocationCategoryReview.location_id,
-                    LocationCategoryReview.category_id
-                )
-                .subquery()
-            )
-
-            # Query base
-            query = (
-                select(
-                    Location,
-                    Category,
-                    last_reviews.c.last_reviewed
-                )
-                .join(Category, Category.is_active == True)
-                .outerjoin(
-                    last_reviews,
-                    and_(
-                        Location.id == last_reviews.c.location_id,
-                        Category.id == last_reviews.c.category_id
-                    )
-                )
-            )
-
-            # filter by review expiration
             cutoff_date = datetime.utcnow() - timedelta(
                 days=settings.REVIEW_EXPIRATION_DAYS
             )
-            query = query.where(
-                or_(
-                    last_reviews.c.last_reviewed.is_(None),
-                    last_reviews.c.last_reviewed < cutoff_date
-                )
-            )
+            print(f"\n cutoff_date", cutoff_date)
 
-            # Add distance column if user location provided and order by it if so 
-            if user_latitude is not None and user_longitude is not None:
-                distance = func.ST_Distance(
-                    Location.point,
-                    func.ST_SetSRID(
-                        func.ST_MakePoint(user_longitude, user_latitude),
-                        4326
+            query = (
+                select(
+                    Location.id.label('location_id'),
+                    Location.name.label('location_name'),
+                    Category.id.label('category_id'),
+                    Category.name.label('category_name'),
+                    LocationCategoryReview.last_reviewed_at
+                )
+                .select_from(Category)
+                .join(
+                    LocationCategoryReview,
+                    LocationCategoryReview.category_id == Category.id,
+                    isouter=True
+                )
+                .join(
+                    Location,
+                    LocationCategoryReview.location_id == Location.id
+                )
+                .where(
+                    or_(
+                        LocationCategoryReview.last_reviewed_at == None,
+                        LocationCategoryReview.last_reviewed_at < cutoff_date
                     )
                 )
-                query = query.add_columns(distance.label('distance'))
-                query = query.order_by(distance)
-
-            # Order by last review date and randomize
-            query = query.order_by(
-                last_reviews.c.last_reviewed.asc().nullsfirst(),
-                func.random()
+                .order_by(
+                    (LocationCategoryReview.last_reviewed_at).nullsfirst(),
+                    func.random()
+                )
+                .limit(limit)
             )
-
-            # Limit results to the specified amount
-            query = query.limit(limit)
-
-            # Execute query
+            
             result = await db.execute(query)
-            recommendations = result.all()
-
-            # Build response
+            rows = result.all()
+            
             return [
                 ExplorationRecommendation(
-                    location_id=rec.Location.id,
-                    category_id=rec.Category.id,
-                    location_name=rec.Location.name,
-                    category_name=rec.Category.name,
-                    last_reviewed_at=rec.last_reviewed,
-                    distance_km=getattr(rec, 'distance', None)
+                    location_id=row.location_id,
+                    location_name=row.location_name,
+                    category_id=row.category_id,
+                    category_name=row.category_name,
+                    last_reviewed_at=row.last_reviewed_at
                 )
-                for rec in recommendations
+                for row in rows
             ]
-
         except Exception as e:
-            logger.error(f"Error getting recommendations: {str(e)}")
+            logger.error(f"Error getting exploration recommendations: {str(e)}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="Error getting recommendations"
+                detail="Error getting exploration recommendations"
             )
 
-# todo: Add record_review method to RecommendationService
     async def record_review(
         self,
         db: AsyncSession,
@@ -146,3 +112,24 @@ class RecommendationService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Error recording review"
             )
+        
+class LocationCategoryRepository(BaseRepository[LocationCategoryReview]):
+    def __init__(self):
+        super().__init__(LocationCategoryReview)
+        
+    async def create_relationship(
+        self,
+        session: AsyncSession,
+        location_id: int,
+        category_id: int
+    ) -> LocationCategoryReview:
+        location_category_Reviw = LocationCategoryReview(
+            location_id=location_id,
+            category_id=category_id,
+        )
+        session.add(location_category_Reviw)
+
+        await session.commit()
+        await session.refresh(location_category_Reviw)
+        return location_category_Reviw
+

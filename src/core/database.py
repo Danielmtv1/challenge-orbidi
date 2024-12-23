@@ -1,15 +1,17 @@
-# src/core/database.py
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
-from fastapi import FastAPI
+
 import asyncpg
+from fastapi import FastAPI
+from sqlalchemy.engine.url import make_url
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
-from sqlalchemy.engine.url import make_url
+
 from .config import get_settings
 
+
 settings = get_settings()
-print(settings.DATABASE_URL)
+
 # SQLAlchemy async engine
 engine = create_async_engine(
     settings.DATABASE_URL,
@@ -45,7 +47,6 @@ async def init_db_pool() -> asyncpg.Pool:
         # Build URL with credentials
         asyncpg_url = f"postgresql://{sql_url.username}:{sql_url.password}@{sql_url.host}:{sql_url.port}/{sql_url.database}"
         
-        print(f"Attempting to connect with URL (credentials hidden): postgresql://{sql_url.username}@{sql_url.host}:{sql_url.port}/{sql_url.database}")
         
         # try to connect to the database
         return await asyncpg.create_pool(

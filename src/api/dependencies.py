@@ -1,4 +1,3 @@
-
 from fastapi import Depends, Security, HTTPException, status
 from fastapi.security.api_key import APIKeyHeader
 
@@ -6,8 +5,10 @@ from src.core.config import get_settings
 
 from src.repositories.location import LocationRepository, Location
 from src.repositories.category import CategoryRepository, Category
-from src.services.recomendation import RecommendationService
-
+from src.repositories.recomendation import (
+    RecommendationRepository,
+    LocationCategoryReview
+)
 settings = get_settings()
 
 # TODO: simulate valid API keys this should be replaced by a real API key verification
@@ -33,5 +34,5 @@ def get_location_repository() -> LocationRepository:
 def get_category_repository() -> CategoryRepository:
     return CategoryRepository(Category)
 
-def get_recommendation_service() -> RecommendationService:
-    return RecommendationService()
+def get_recommendation_service() -> RecommendationRepository:
+    return RecommendationRepository(LocationCategoryReview)

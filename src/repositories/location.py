@@ -13,7 +13,6 @@ from .base import BaseRepository
 
 class LocationRepository(BaseRepository[Location]):
     def __init__(self):
-
         super().__init__(model=Location)
 
     async def create_with_coordinates(
@@ -22,14 +21,10 @@ class LocationRepository(BaseRepository[Location]):
         name: str,
         latitude: float,
         longitude: float,
-        category: int,
         description: Optional[str] = None
     ) -> Location:
         try:
-            # Create a WKTElement from the latitude and longitude
             point = WKTElement(f'POINT({longitude} {latitude})', srid=4326)
-            
-            # Create a new Location object with the provided data
             location = Location(
                 name=name,
                 latitude=latitude,
@@ -37,24 +32,10 @@ class LocationRepository(BaseRepository[Location]):
                 point=point,
                 description=description
             )
-            
-            # add the object to the session
             session.add(location)
-            
-            # Asynchronously commit the session
             await session.commit()
-            
-            # Refresh the object to get the updated values
             await session.refresh(location)
-            location_category = LocationCategoryRepository()
-       
-            location_category_review = await location_category.create_relationship(session, location_id=location.id, category_id=category)
-            if location_category_review:
-                return location
-            else:
-                raise Exception("Error creando la relación entre la ubicación y la categoría")
-
-
+            return location
         except SQLAlchemyError as e:
             await session.rollback()
             raise Exception(f"Error creando la ubicación: {str(e)}")

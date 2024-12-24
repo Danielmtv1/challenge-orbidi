@@ -25,8 +25,8 @@ async def lifespan(app: FastAPI):
     Contexto de vida de la aplicación para setup y cleanup
     """
     # Setup
-    app.state.pool = await init_db_pool()
-    
+    pool = await init_db_pool()
+    app.state.pool = pool
     # create tables in development
     if settings.ENVIRONMENT == "development":
         async with engine.begin() as conn:

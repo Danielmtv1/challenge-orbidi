@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from src.api.dependencies import verify_api_key
 from src.schemas.location import LocationResponse, LocationWithDistance
-from src.repositories.location import LocationRepository
+from src.services.location import LocationService
 
 router = APIRouter()
 
@@ -25,8 +25,8 @@ async def create_location(
     db: AsyncSession = Depends(get_db)
 ):
     # Awaiting the creation of the location
-    location_repository = LocationRepository()
-    location = await location_repository.create_with_coordinates(
+    service = LocationService()
+    return await service.create_location(
         session=db,
         name=name,
         latitude=latitude,
@@ -34,7 +34,7 @@ async def create_location(
         category=category,
         description=description
     )
-    return location
+
 @router.get("/nearby", response_model=List[LocationWithDistance])
 async def get_nearby_locations(
     latitude: float = Query(..., ge=-90, le=90),
@@ -46,12 +46,11 @@ async def get_nearby_locations(
     """
     Obtain a list of nearby locations
     """
-    location_repo = LocationRepository()
-    location = await location_repo.get_nearby(
+    service = LocationService()
+    return await service.get_nearby_locations(
         session=db,
         latitude=latitude,
         longitude=longitude,
         radius_km=radius_km,
         limit=limit
     )
-    return location

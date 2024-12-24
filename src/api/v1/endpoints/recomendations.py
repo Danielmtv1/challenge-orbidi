@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 from src.schemas.recomendation import ExplorationRecommendation
 from src.repositories.recomendation import RecommendationRepository
+from src.services.recomendation import RecommendationService
 
 
 router = APIRouter()
@@ -17,18 +18,14 @@ async def get_exploration_recommendations(
 
 ):
     
-    recommendation_repo = RecommendationRepository()
+    recommendation_service = RecommendationService()
 
     try:
-        # Obtener los datos originales
-        raw_recommendations = await recommendation_repo.get_exploration_recommendations(
-            db=db,
+        raw_recommendations = await recommendation_service.get_exploration_recommendations(
+            session=db,
             limit=limit
         )
-
-        # Transformar los datos en el formato esperado
-
-        
+      
         return raw_recommendations
     except Exception as e:
         print(e)

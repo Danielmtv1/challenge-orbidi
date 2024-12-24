@@ -8,3 +8,13 @@ services:
       POSTGRES_DB: fastapi_db
     ports:
       - "5432:5432"
+  api:
+    build: 
+      context: .  
+      dockerfile: docker/Dockerfile  
+    ports:
+      - "8000:8000"  
+    depends_on:
+      - db 
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/fastapi_db

@@ -1,11 +1,12 @@
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Optional
 
 import logging
 
 from fastapi import HTTPException, status
-from sqlalchemy import select, func, or_
+from sqlalchemy import select, func, or_, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.core.config import get_settings
 from src.models.category import Category
@@ -37,8 +38,7 @@ class RecommendationRepository(BaseRepository[LocationCategoryReview]):
             cutoff_date = datetime.utcnow() - timedelta(
                 days=settings.REVIEW_EXPIRATION_DAYS
             )
-            print(f"\n cutoff_date", cutoff_date)
-
+ 
             query = (
                 select(
                     Location.id.label('location_id'),
@@ -133,3 +133,23 @@ class LocationCategoryRepository(BaseRepository[LocationCategoryReview]):
         await session.refresh(location_category_Reviw)
         return location_category_Reviw
 
+    async def update_last_view(
+        self,
+        session: AsyncSession,
+        location_id: int
+    ) -> Optional[LocationCategoryReview]:
+        try:
+            # Get all reviews for the location
+            stmt = (
+                update(LocationCategoryReview)
+                .where(LocationCategoryReview.location_id == location_id)
+                .values(last_reviewed_at=datetime.utcnow())
+                .returning(LocationCategoryReview)
+            )
+            result = await session.execute(stmt)
+            await session.commit()
+            return result.scalar_one_or_none()
+
+        except SQLAlchemyError as e:
+            await session.rollback()
+            raise SQLAlchemyError(f"Database error: {str(e)}")

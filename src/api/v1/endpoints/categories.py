@@ -1,12 +1,11 @@
 from typing import List
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.core.database import get_db
 
 from src.schemas.category import CategoryCreate, CategoryResponse
-from src.repositories.category import CategoryRepository
-from src.api.dependencies import get_category_repository, verify_api_key
+from src.services.category import CategoryService
+from src.api.dependencies import  verify_api_key
 
 router = APIRouter()
 
@@ -28,8 +27,8 @@ async def create_category(
         "name": category_in.name,
         "description": category_in.description
     }
-    category_repo = CategoryRepository()
-    category = await category_repo.create(session=db, obj_in=category_data)
+    category_service = CategoryService()
+    category = await category_service.create(session=db, obj_in=category_data)
     return category
 
 
@@ -40,6 +39,6 @@ async def get_categories(
     session: AsyncSession = Depends(get_db),
 ):
 
-    category_repo = CategoryRepository()
-    category =  await category_repo.get_active_categories(db=session, skip=skip, limit=limit)
+    category_service = CategoryService()
+    category =  await category_service.get_active_categories(session=session, skip=skip, limit=limit)
     return category

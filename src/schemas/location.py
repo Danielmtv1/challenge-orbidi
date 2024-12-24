@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from .base import BaseResponseSchema
-from datetime import datetime
+
 
 class LocationBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)

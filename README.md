@@ -178,6 +178,19 @@ Arquitectura Hexagonal: También conocida como "Ports and Adapters", permite una
 - `tests/`: Contiene pruebas unitarias e integración para los diferentes servicios.
 
 ---
+## Tecnologías Usadas
+
+Este proyecto utiliza las siguientes tecnologías y herramientas:
+
+- **FastAPI**: Framework web moderno y rápido para construir APIs con Python, basado en Starlette y Pydantic. Es altamente eficiente y está diseñado para la creación de aplicaciones RESTful con una excelente documentación automática.
+  
+- **Alembic**: Herramienta de migración de bases de datos para SQLAlchemy, que facilita el manejo de cambios en la estructura de la base de datos, permitiendo generar y aplicar migraciones de forma sencilla.
+
+- **PostgreSQL**: Sistema de gestión de bases de datos relacional de código abierto. Usado para almacenar datos de manera robusta, escalable y confiable.
+
+- **PostGIS**: Extensión espacial para PostgreSQL que añade soporte para datos geoespaciales. Permite almacenar, consultar y manipular datos geográficos y espaciales, como coordenadas y geometrías.
+
+---
 ## Licencia
 
 Este proyecto está licenciado bajo la Licencia MIT. Consulta el archivo LICENSE para más detalles.

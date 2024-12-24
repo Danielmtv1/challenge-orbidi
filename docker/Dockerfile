@@ -1,29 +1,35 @@
-# Usa una imagen base oficial de Python
+# Use an official Python runtime as a parent image
 FROM python:3.12
 
-# Establece el directorio de trabajo dentro del contenedor
+# Set the working directory in the container
 WORKDIR /app
 
-# Copia el archivo de requerimientos al contenedor
+# Copy the requirements file into the container
 COPY requirements.txt /app/
 
-# Instala las dependencias
+# Install dependencies
 RUN pip install --no-cache-dir -r requirements.txt
-# Copia solo los archivos necesarios para Alembic
+
+# Copy only the necessary files for Alembic
 COPY alembic.ini /app/
 
-# Copia la carpeta alembic/
+# Copy the alembic/ folder
 COPY alembic/ /app/alembic/ 
 
+# Copy the entrypoint script
 COPY entrypoint.sh /app/
+
+# Make the entrypoint script executable
 RUN chmod +x /app/entrypoint.sh
 
+# Set the entrypoint to use the script
 ENTRYPOINT ["/app/entrypoint.sh"]
-# Copia todo el código de la aplicación al contenedor
+
+# Copy the rest of the application code into the container
 COPY . /app/
 
-# Exponer el puerto en el que corre la app
+# Expose the port the app runs on
 EXPOSE 8000
 
-# Comando para ejecutar la app con Uvicorn
+# Command to run the app with Uvicorn
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

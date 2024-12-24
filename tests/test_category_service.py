@@ -31,18 +31,18 @@ class MockCategoryRepository:
 @pytest.fixture
 def mock_repository():
     repository = MockCategoryRepository()
-    # Convertir todos los métodos en AsyncMock
+    # Convert all methods into AsyncMock
     for method in ['get_active_categories', 'get_by_name', 'bulk_create', 'create', 'update']:
         setattr(repository, method, AsyncMock())
     return repository
 
 @pytest.fixture
 def category_service(mock_repository):
-    # Mockear la clase CategoryService
+    # Mock the CategoryService
     service = Mock()
     service.repository = mock_repository
     
-    # Implementar los métodos como async con manejo de errores
+    # Implement the methods that will be used in the tests
     async def get_active_categories(session, skip=0, limit=100):
         try:
             return await mock_repository.get_active_categories(db=session, skip=skip, limit=limit)
@@ -99,24 +99,22 @@ def sample_category():
         is_active=True
     )
 
-# ... [resto de los tests anteriores se mantienen igual hasta los tests de error]
-
 @pytest.mark.asyncio
 async def test_get_by_name_error(category_service, mock_session):
-    # Configurar
+
     category_service.repository.get_by_name.side_effect = SQLAlchemyError("Database error")
     
-    # Verificar que se lanza la excepción
+
     with pytest.raises(Exception) as exc_info:
         await category_service.get_by_name(mock_session, name="Test")
     assert "Error getting category by name" in str(exc_info.value)
 
 @pytest.mark.asyncio
 async def test_create_category_error(category_service, mock_session):
-    # Configurar
+
     category_service.repository.create.side_effect = SQLAlchemyError("Database error")
     
-    # Verificar que se lanza la excepción
+
     with pytest.raises(Exception) as exc_info:
         await category_service.create_category(
             session=mock_session,
@@ -129,7 +127,7 @@ async def test_update_category_status_error(category_service, mock_session):
     # Configurar
     category_service.repository.update.side_effect = SQLAlchemyError("Database error")
     
-    # Verificar que se lanza la excepción
+
     with pytest.raises(Exception) as exc_info:
         await category_service.update_category_status(
             mock_session,
